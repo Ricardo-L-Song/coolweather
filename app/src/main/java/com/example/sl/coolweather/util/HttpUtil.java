@@ -12,6 +12,6 @@ public class HttpUtil {
     public static void sendOkHttpRequest(String address,okhttp3.Callback callback){
         OkHttpClient client=new OkHttpClient();
         Request request=new Request.Builder().url(address).build();//形参，用来发送请求
-        client.newCall(request).enqueue(callback);//请求后，相应服务器请求的回调调用
+        client.newCall(request).enqueue(callback);//请求后，响应服务器请求的回调调用
     }
 }
