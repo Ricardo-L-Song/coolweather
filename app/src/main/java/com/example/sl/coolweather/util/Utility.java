@@ -15,7 +15,7 @@ import org.json.JSONObject;
  */
 //处理服务器返回的Json数据的工具类（形参形参形参）
 public class Utility {
-    //解析处理服务器返回的省级数据(填入省表)
+    //解析处理服务器返回的省级数据(将JSON数据解析成Province实体类填入db数据库的省表)
     public static boolean handleProvinceResponse(String response){
         if (!TextUtils.isEmpty(response)) {//CharSequence类型的参数不为null或"" （TextView的一个非空判断）
             try{
@@ -36,7 +36,7 @@ public class Utility {
         }
         return false;//未处理省级数据
     }
-    //解析处理服务器返回的市级数据（填入市表）
+    //解析处理服务器返回的市级数据（将JSON数据解析成City实体类填入db数据库的市表）
     public static boolean handleCityResponse(String response,int provinceId){
         if(!TextUtils.isEmpty(response)) {
             try {
@@ -57,7 +57,7 @@ public class Utility {
         }
         return false;//未处理市级数据
     }
-    //解析处理服务器返回的县级数据（填入县表）
+    //解析处理服务器返回的县级数据（将JSON数据解析成County实体类填入db数据库县表）
     public static boolean handleCountyResponse(String response,int cityId){
         if (!TextUtils.isEmpty(response)){
             try {
