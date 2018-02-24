@@ -2,6 +2,7 @@ package com.example.sl.coolweather.fragment;
 
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -16,6 +17,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.sl.coolweather.R;
+import com.example.sl.coolweather.activity.WeatherActivity;
 import com.example.sl.coolweather.db.City;
 import com.example.sl.coolweather.db.County;
 import com.example.sl.coolweather.db.Province;
@@ -76,13 +78,19 @@ public class ChooseAreaFragment extends Fragment {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {//非静态的View（Listview）需要进行更新数据操作 在这个方法中调用 依托于托管的Activity
         super.onActivityCreated(savedInstanceState);
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {//下级列表 setOnItemClickListener用来适配listview，RecyclerView则是完全交由adapter
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {//由于是listview的点击事件 position可以确定传入 在我们点击的时候
                 if (currentLevel == LEVEL_PROVINCE) {//如果当前在省级选项列表 显示的省级数据
                     selectedProvince = mProvinceList.get(position);//选择listview省级列表中的省显示市
                     queryCities();
                 } else if (currentLevel == LEVEL_CITY) {//如果当前在市级选项列表 显示的市级数据
                     selectedCity = mCityList.get(position);
                     queryCounties();
+                } else if (currentLevel==LEVEL_COUNTY){//如果当前在县级选项列表 显示县级数据
+                    String weatherId=mCountyList.get(position).getWeatherId();
+                    Intent intent=new Intent(getActivity(), WeatherActivity.class);//跳转Intent
+                    intent.putExtra("weather_id",weatherId);
+                    startActivity(intent);
+                    getActivity().finish();//结束当前Activity的生命周期 优化
                 }
             }
         });

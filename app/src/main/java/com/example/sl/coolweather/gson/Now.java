@@ -18,7 +18,16 @@ public class Now {
      */
 
     @com.google.gson.annotations.SerializedName("cond")
-    private More more;
+    public More more;
+
+    public String getTmperature() {
+        return tmperature;
+    }
+
+    public void setTmperature(String tmperature) {
+        this.tmperature = tmperature;
+    }
+
     @com.google.gson.annotations.SerializedName("tmp")
     private String tmperature;
 
@@ -39,4 +48,5 @@ public class Now {
             this.info = info;
         }
     }
+
 }

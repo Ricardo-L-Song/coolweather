@@ -5,6 +5,8 @@ import android.text.TextUtils;
 import com.example.sl.coolweather.db.City;
 import com.example.sl.coolweather.db.County;
 import com.example.sl.coolweather.db.Province;
+import com.example.sl.coolweather.gson.Weather;
+import com.google.gson.Gson;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -76,5 +78,17 @@ public class Utility {
             }
         }
         return false;//未处理县级数据
+    }
+    //解析处理服务器返回的weather数据 解析成Weather实体类 不入db库 因为天气预报实时变化大 但可以用SharePreference缓存
+    public static Weather handleWeatherResponse(String response){//将一串字符串解析成JSON数据再解析
+        try{
+            JSONObject jsonObject=new JSONObject(response);
+            JSONArray jsonArray=jsonObject.getJSONArray("HeWeather");//取出HeWeather作为JSON数组
+            String weatherContent=jsonArray.getJSONObject(0).toString();
+            return new Gson().fromJson(weatherContent,Weather.class);//JSON数据与Weather实体类建立映射
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return null;//没有解析到 就为null
     }
 }
