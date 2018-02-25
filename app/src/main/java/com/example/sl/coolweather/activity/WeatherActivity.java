@@ -2,12 +2,16 @@ package com.example.sl.coolweather.activity;
 
 import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -54,36 +58,55 @@ public class WeatherActivity extends AppCompatActivity {
     ScrollView weatherLayout;
     @BindView(R.id.bing_pic_img)
     ImageView bingPicImg;
+    @BindView(R.id.swipe_refresh)
+    public SwipeRefreshLayout swipeRefresh;
+    @BindView(R.id.nav_button)
+    Button navButton;
+    @BindView(R.id.drawer_layout)
+    public DrawerLayout drawerLayout;
+    private String mWeatherId;//这是用来刷新天气信息的id
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (Build.VERSION.SDK_INT>=21){//自动进行判断 当前版本为5.0以上
-            View decorView=getWindow().getDecorView();
-            decorView.setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_LAYOUT_STABLE);//活动布局显示在系统状态栏上面
-            getWindow().setStatusBarColor(Color.TRANSPARENT);//设置系统状态栏的颜色为透明
-        }
+        super.onCreate(savedInstanceState);//自动进行判断 当前版本为5.0以上
+        View decorView = getWindow().getDecorView();
+        decorView.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);//活动布局显示在系统状态栏上面
+        getWindow().setStatusBarColor(Color.TRANSPARENT);//设置系统状态栏的颜色为透明
         setContentView(R.layout.activity_weather);
         ButterKnife.bind(this);
+        swipeRefresh.setColorSchemeResources(R.color.colorPrimary);
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         String weatherString = preferences.getString("weather", null);//键值对方式从SharePrefences中取出
         if (weatherString != null) {
             //有缓存的时候直接解析天气数据
             Weather weather = Utility.handleWeatherResponse(weatherString);
+            mWeatherId = weather.basic.getWeatherId();//直接从实体类中获取id 因为下面的requestWeather传入的是一个id值
             showWeatherInfo(weather);
         } else {
             //无缓存时去服务器查询数据
-            String weatherId = getIntent().getStringExtra("weather_id");//取出跳转Intent中的weatherId
+            mWeatherId = getIntent().getStringExtra("weather_id");//否则取出跳转Intent中的weatherId mWeatherId为本地变量
             weatherLayout.setVisibility(View.INVISIBLE);//设置ScrollView不可见 要不然空数据界面显得很奇怪
-            requestWeather(weatherId);
+            requestWeather(mWeatherId);
         }
-        String bingPic=preferences.getString("bing_pic",null);
+        swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                requestWeather(mWeatherId);//用全局变量mweatherId来根据天气id请求天气信息 达到刷新的功能
+            }
+        });
+        String bingPic = preferences.getString("bing_pic", null);
         if (bingPic != null) {
             Glide.with(this).load(bingPic).into(bingPicImg);//如果缓存中有键值对bing_pic 则使用Glide来加载图片
-        }else{
+        } else {
             loadBingPic();//调用方法从服务器获取数据并且缓存
         }
+        navButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                drawerLayout.openDrawer(GravityCompat.START);//开启侧滑菜单
+            }
+        });
     }
 
     //根据传入的天气id从服务器请求城市天气信息（判断哪里要刷新UI 就从哪里发出获取数据请求 服务器响应的数据可以通过回调导入）
@@ -98,6 +121,7 @@ public class WeatherActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
+                        swipeRefresh.setRefreshing(false);//设置刷新事件停止，隐藏刷新进度条
                     }
                 });
             }
@@ -119,6 +143,7 @@ public class WeatherActivity extends AppCompatActivity {
                         } else {//未能从Weather实体类获取数据
                             Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
                         }
+                        swipeRefresh.setRefreshing(false);//设置刷新事件停止，隐藏刷新进度条
                     }
                 });
             }
@@ -166,8 +191,8 @@ public class WeatherActivity extends AppCompatActivity {
     }
 
     //加载必应每日一周 存入缓存并且进行UI操作 用Glide加载
-    public void loadBingPic(){
-        String requestBingPic="http://guolin.tech/api/bing_pic";//请求必应每日一图的接口地址
+    public void loadBingPic() {
+        String requestBingPic = "http://guolin.tech/api/bing_pic";//请求必应每日一图的接口地址
         HttpUtil.sendOkHttpRequest(requestBingPic, new Callback() {//发出请求并且回调响应数据至此处
             @Override
             public void onFailure(Call call, IOException e) {
@@ -176,9 +201,9 @@ public class WeatherActivity extends AppCompatActivity {
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                final String bingPic=response.body().string();//服务器响应的数据同样化成字符串 之后可以通过Glide解析加载成图片
-                SharedPreferences.Editor editor=PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this).edit();
-                editor.putString("bing_pic",bingPic);//将String存入缓存
+                final String bingPic = response.body().string();//服务器响应的数据同样化成字符串 之后可以通过Glide解析加载成图片
+                SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this).edit();
+                editor.putString("bing_pic", bingPic);//将String存入缓存
                 editor.apply();
                 runOnUiThread(new Runnable() {//从回调函数回到主线程 更新UI
                     @Override
